@@ -66,9 +66,9 @@ ui <- fluidPage(
                   value = 30),
       sliderInput("k1", "Absorption rate constant (ka, 1/h)", 0.1, 10, 5),
       sliderInput("CL", "Clearance (CL, L/h)", 0.1, 100, 5),
-      sliderInput("VC", "Central volume (VC, L)", 0.1, 100, 5),
-      sliderInput("VP", "Peripheral volume (VP, L)", 0.1, 500, 5),
-      sliderInput("Q", "Intercompartmental clearance (Q, L/h)", 0.1, 100, 5),
+      sliderInput("VC", "Central volume (VC, L)", 0.1, 1500, 5),
+      sliderInput("VP", "Peripheral volume (VP, L)", 0.1, 2000, 5),
+      sliderInput("Q", "Intercompartmental clearance (Q, L/h)", 0.1, 150, 5),
       sliderInput("F", "Bioavailability (F)", 0, 1, 0.5)
     ),
     
@@ -109,17 +109,19 @@ server <- function(input, output, session) {
     a<- mod %>% 
       param(par())%>%
       ev(e()) %>% 
-      mrgsim %>%
+      mrgsim(end = 48) %>%
       as.data.frame()
     
     p <- ggplot(a, aes(x = time, y= CP)) +
       geom_line(color = "#6666FF", alpha = 0.7) + 
+      scale_y_continuous(trans = 'log10', limits = c(0.1, 10)) +
       theme_bw()
     
     if (input$fit) {
       p <- p +
         geom_point(data = uploaded_data2(), aes(x = time, y = mean), alpha = 0.5, colour = "orange")+
         geom_line(data = uploaded_data2(), aes(x = time, y = mean), alpha = 0.5, colour = "orange") +
+        scale_y_continuous(trans = 'log10') +
         labs(y = "concentration (ng/mL)", x= "time (h)")
       ggplotly(p)
     }
@@ -134,7 +136,6 @@ server <- function(input, output, session) {
     a$VC = (input$amt * input$F * 1000) / a$CMAX
     a$CL = a$CLFO * input$F
     a$VZ = a$VZFO * input$F
-    a$F  = input$amt * 1000 / a$AUCIFO
     a
   })
   
